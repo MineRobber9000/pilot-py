@@ -395,7 +395,7 @@ class Pilot:
             n = (instr>>2)&0b11
             [
                 [self.halt,self.stop,self.ccf,self.sds],
-                [self.daa,self.sao,self.das,self.dau],
+                [self.daa,self.sao,self.das,self.sau],
                 [],
                 [self.repi_reg,self.repi_reg,self.repi_reg,self.repi_reg]
             ][m][n](instr)
