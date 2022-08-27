@@ -933,7 +933,6 @@ class Pilot:
         self.finalizerm(instr&31)
         self.system_registers.sign=(val&0x80)>0
         self.system_registers.zero=(val==0)
-        # also modifies overflow but not sure how
     def srl(self,instr):
         dest = self.getrm(instr&31)
         og = dest.get()
