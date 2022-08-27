@@ -616,7 +616,6 @@ class Pilot:
         dest.set(val)
         self.main_registers.d=self.system_registers.k
         self.system_registers.data_segment_mode=True
-        self.system_registers.segment_adjust=False
         self.finalizerm(instr&31,True)
     def ldixa(self,instr):
         offset = self.memory.read_s16(self.system_registers.pc)
@@ -636,12 +635,10 @@ class Pilot:
         self.system_registers.pc+=2
         dest = self.getrm(instr&31,True)
         dest.set(self.system_registers.sp+offset)
-        self.system_registers.segment_adjust=False
         self.finalizerm(instr&31,True)
     def mulu(self,instr):
         src = self.getrm(instr&31)
         self.main_registers.ab = self.main_registers.a*src.get()
-        self.system_registers.segment_adjust=False
         self.finalize_rm(instr&31)
         self.system_registers.sign = (self.main_registers.ab&0x8000)>0
         self.system_registers.zero = (self.main_registers.ab==0)
@@ -650,7 +647,6 @@ class Pilot:
         src = self.getrm(instr&31)
         numerator = self.main_registers.ab
         divisor = src.get()
-        self.system_registers.segment_adjust=False
         self.finalizerm(instr&31)
         if divisor==0:
             self.system_registers.overflow = False
@@ -665,7 +661,7 @@ class Pilot:
         src = self.getrm(instr&31,True)
         ab_signed = self.pcr16(self.main_registers.ab)
         self.main_registers.abhl=ab_signed*src.get(True)
-        self.system_registers.segment_adjust=False
+
         self.finalizerm(instr&31,True)
         self.system_registers.sign = (self.main_registers.abhl&0x80000000)>0
         self.system_registers.zero = (self.main_registers.abhl==0)
@@ -674,7 +670,6 @@ class Pilot:
         src = self.getrm(instr&31,True)
         numerator = self.to_s32(self.main_registers.abhl)
         divisor = src.get(True)
-        self.system_registers.segment_adjust=False
         self.finalizerm(instr&31,True)
         if divisor==0:
             self.system_registers.overflow = False
@@ -700,7 +695,6 @@ class Pilot:
             dest.set(self.main_registers.c)
         elif src==7:
             dest.set(self.system_registers.ie)
-        self.system_registers.segment_adjust=False
         self.finalizerm(instr&31)
     def ld_cfe_dest(self,instr):
         dest = (instr>>6)&0b111
@@ -717,7 +711,6 @@ class Pilot:
             self.main_registers.c=src.get()
         elif dest==7:
             self.system_registers.ie=src.get()
-        self.system_registers.segment_adjust=False
         self.finalizerm(instr&31)
     def resf(self,instr):
         self.system_registers.f&=(~instr&0xFF)
@@ -741,7 +734,6 @@ class Pilot:
             self.system_registers.overflow = (og&0x80)==0 and (imm&0x80)==0
         else:
             self.system_registers.overflow = (og&0x80)>0 and (imm&0x80)>0
-        self.system_registers.segment_adjust=False
         self.finalizerm(instr&31)
     def dec(self,instr):
         dest = self.getrm(instr&31)
@@ -757,7 +749,6 @@ class Pilot:
             self.system_registers.overflow = (val&0x80)>0 and (og&0x80)==0
         else:
             self.system_registers.overflow = (val&0x80)==0 and (og&0x80)>0
-        self.system_registers.segment_adjust=False
         self.finalizerm(instr&31)
     def neg(self,instr):
         dest = self.getrm(instr&31)
@@ -779,7 +770,6 @@ class Pilot:
         self.system_registers.sign=(val&0x80)>0
         self.system_registers.zero=(val==0)
         self.system_registers.parity = (0x9669>>(val>>4^(val&0x0F)))&1
-        self.system_registers.segment_adjust=False
         self.finalizerm(instr&31)
     def ngc(self,instr):
         dest = self.getrm(instr&31)
@@ -796,7 +786,6 @@ class Pilot:
     def clr(self,instr):
         dest = self.getrm(instr&31)
         dest.set(0)
-        self.system_registers.segment_adjust=False
         self.finalizerm(instr&31)
     def incw(self,instr):
         dest = self.getrm(instr&31,True)
@@ -816,7 +805,6 @@ class Pilot:
                 self.system_registers.overflow = (og&0x8000)==0 and (imm&0x8000)==0
             else:
                 self.system_registers.overflow = (og&0x8000)>0 and (imm&0x8000)>0
-            self.system_registers.segment_adjust=False
             self.finalizerm(instr&31,True)
     def decw(self,instr):
         dest = self.getrm(instr&31,True)
@@ -836,7 +824,6 @@ class Pilot:
                 self.system_registers.overflow = (val&0x8000)>0 and (og&0x8000)==0
             else:
                 self.system_registers.overflow = (val&0x8000)==0 and (og&0x8000)>0
-            self.system_registers.segment_adjust=False
             self.finalizerm(instr&31,True)
     def negw(self,instr):
         dest = self.getrm(instr&31,True)
@@ -859,7 +846,6 @@ class Pilot:
         self.system_registers.zero=(val==0)
         self.system_registers.parity = (0x9669>>((val>>12&0x0F)^(val>>8&0x0F)^\
             (val>>4&0x0F)^(val&0x0F)))&1
-        self.system_registers.segment_adjust=False
         self.finalizerm(instr&31,True)
     def ngcw(self,instr):
         dest = self.getrm(instr&31,True)
@@ -876,7 +862,6 @@ class Pilot:
     def clrw(self,instr):
         dest = self.getrm(instr&31,True)
         dest.set(0)
-        self.system_registers.segment_adjust=False
         self.finalizerm(instr&31,True)
     def rlc(self,instr):
         dest = self.getrm(instr&31)
@@ -945,7 +930,6 @@ class Pilot:
         og = dest.get()
         val = (og<<4)&0xF0 | (og>>4)&0x0F
         dest.set(val)
-        self.system_registers.segment_adjust=False
         self.finalizerm(instr&31)
         self.system_registers.sign=(val&0x80)>0
         self.system_registers.zero=(val==0)
@@ -1027,7 +1011,6 @@ class Pilot:
         og = dest.get()
         val = (og<<8)&0xFF00 | (og>>8)&0x00FF
         dest.set(val)
-        self.system_registers.segment_adjust=False
         self.finalizerm(instr&31,True)
         self.system_registers.sign=(val&0x80)>0
         self.system_registers.zero=(val==0)
@@ -1117,6 +1100,11 @@ class Pilot:
             elif v==24:
                 addr = self.main_registers.ds
                 # there is no DS:[DS] because... think about it
+            # DS:[(HL/IX)(+/-)] need to clear segment adjust flag
+            # (it gets updated in finalizerm)
+            # otherwise it needs to be left alone
+            if v in (5,13,21,29):
+                self.system_registers.segment_adjust = False
             if sixteen:
                 return Address16(self,addr)
             else:
