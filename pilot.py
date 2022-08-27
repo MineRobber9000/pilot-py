@@ -1099,17 +1099,18 @@ class Pilot:
             elif v==24:
                 addr = self.main_registers.ds
                 # there is no DS:[DS] because... think about it
-            # DS:[(HL/IX)(+/-)] need to clear segment adjust flag
-            # (it gets updated in finalizerm)
-            # otherwise it needs to be left alone
-            if v in (5,13,21,29):
-                self.system_registers.segment_adjust = False
             if sixteen:
                 return Address16(self,addr)
             else:
                 return Address8(self,addr)
         raise PilotException(f"something's wrong here (rm specifier {v})")
-    def finalizerm(self,v,sixteen=False):
+    def finalizerm(self,v,sixteen=False,first_go=True):
+        if first_go:
+            # DS:[(HL/IX)(+/-)] need to clear segment adjust flag
+            # (it gets updated in finalizerm)
+            # otherwise it needs to be left alone
+            if v in (5,13,21,29):
+                self.system_registers.segment_adjust = False
         hl = self.main_registers.hl
         ix = self.main_registers.ix
         if v in (1,5):
@@ -1129,7 +1130,7 @@ class Pilot:
             if v==29 and self.main_registers.ix>ix:
                 self.system_registers.segment_adjust=True
         if sixteen: # do it twice for sixteen-bit reads/writes
-            self.finalizerm(v)
+            self.finalizerm(v,first_go=False)
     def pcr8(self,val):
         """Converts pcr8 val into a valid PC offset."""
         val&=0xFF # 8 bit value
