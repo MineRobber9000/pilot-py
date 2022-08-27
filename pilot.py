@@ -1105,32 +1105,30 @@ class Pilot:
                 return Address8(self,addr)
         raise PilotException(f"something's wrong here (rm specifier {v})")
     def finalizerm(self,v,sixteen=False,first_go=True):
-        if first_go:
-            # DS:[(HL/IX)(+/-)] need to clear segment adjust flag
-            # (it gets updated in finalizerm)
-            # otherwise it needs to be left alone
-            if v in (5,13,21,29):
-                self.system_registers.segment_adjust = False
+        # DS:[(HL/IX)(+/-)] need to clear segment adjust flag
+        # (it gets updated in finalizerm)
+        # otherwise it needs to be left alone
+        if v in (5,13,21,29):
+            self.system_registers.segment_adjust = False
+        inc_amount = 2 if sixteen else 1
         hl = self.main_registers.hl
         ix = self.main_registers.ix
         if v in (1,5):
-            self.main_registers.hl=(self.main_registers.hl+1)&0xFFFF
+            self.main_registers.hl=(self.main_registers.hl+idx_amount)&0xFFFF
             if v==5 and self.main_registers.hl<hl:
                 self.system_registers.segment_adjust=True
         elif v in (9,13):
-            self.main_registers.hl=(self.main_registers.hl-1)&0xFFFF
+            self.main_registers.hl=(self.main_registers.hl-idx_amount)&0xFFFF
             if v==13 and self.main_registers.hl>hl:
                 self.system_registers.segment_adjust=True
         elif v in (17,21):
-            self.main_registers.ix=(self.main_registers.ix+1)&0xFFFF
+            self.main_registers.ix=(self.main_registers.ix+idx_amount)&0xFFFF
             if v==21 and self.main_registers.ix<ix:
                 self.system_registers.segment_adjust=True
         elif v in (25,29):
-            self.main_registers.ix=(self.main_registers.ix-1)&0xFFFF
+            self.main_registers.ix=(self.main_registers.ix-idx_amount)&0xFFFF
             if v==29 and self.main_registers.ix>ix:
                 self.system_registers.segment_adjust=True
-        if sixteen: # do it twice for sixteen-bit reads/writes
-            self.finalizerm(v,first_go=False)
     def pcr8(self,val):
         """Converts pcr8 val into a valid PC offset."""
         val&=0xFF # 8 bit value
