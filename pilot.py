@@ -1104,7 +1104,7 @@ class Pilot:
             else:
                 return Address8(self,addr)
         raise PilotException(f"something's wrong here (rm specifier {v})")
-    def finalizerm(self,v,sixteen=False,first_go=True):
+    def finalizerm(self,v,sixteen=False):
         # DS:[(HL/IX)(+/-)] need to clear segment adjust flag
         # (it gets updated in finalizerm)
         # otherwise it needs to be left alone
