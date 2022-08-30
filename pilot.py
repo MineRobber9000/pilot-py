@@ -355,6 +355,13 @@ class Register(RM):
 register as the destination of an operation")
         setattr(self.cpu.main_registers,self.args[0],v&0xFFFF)
 
+# only used for indirect C usage, not a default RM mode
+class IOPort(RM):
+    def get(self):
+        return self.cpu.ioports.read(self.args[0])
+    def set(self,v):
+        self.cpu.ioports.write(self.args[0],v)
+
 class Pilot:
     def __init__(self,memory,ioports):
         self.main_registers = Registers()
@@ -456,6 +463,24 @@ class Pilot:
                 self.sraw,
                 self.swapw,
                 self.srlw
+            ][n](instr)
+        elif (instr>>10)==12: # {BIT/RES/SET} bit, {rm8/[C]}
+            n = (instr>>8)&0b11
+            if n==0: raise InvalidOperation("not sure how we got here ({BIT/RES/SET} bit, {rm8/[C]} instruction with op==0)")
+            n-=1
+            [
+                self.bit_imm,
+                self.res_imm,
+                self.set_imm
+            ][n](instr)
+        elif (instr>>10)==13: # {BIT/RES/SET} {A/B}, {rm8/[C]}
+            n = (instr>>8)&0b11
+            if n==0: raise InvalidOperation("not sure how we got here ({BIT/RES/SET} {A/B}, {rm8/[C]} instruction with op==0)")
+            n-=1
+            [
+                self.bit_imm,
+                self.res_imm,
+                self.set_imm
             ][n](instr)
         else: # if no instructions match, error
             raise UnknownOpcodeException(instr)
@@ -1023,6 +1048,91 @@ class Pilot:
         self.system_registers.zero=(val==0)
         self.system_registers.carry=(og)&1
         self.system_registers.segment_adjust=self.system_registers.carry
+    def bit_imm(self,instr):
+        rmn = instr&31
+        op = None
+        if rmn==30:
+            op = IOPort(self.main_registers.c)
+        else:
+            op = self.getrm(rmn)
+        val = op.get()
+        bit = (instr>>5)&0b111
+        mask = 1<<bit
+        self.system_registers.zero = (val&mask)==0
+        if rmn!=30: self.finalizerm(rmn)
+    def res_imm(self,instr):
+        rmn = instr&31
+        op = None
+        if rmn==30:
+            op = IOPort(self.main_registers.c)
+        else:
+            op = self.getrm(rmn)
+        val = op.get()
+        bit = (instr>>5)&0b111
+        mask = 1<<bit
+        self.system_registers.zero = (val&mask)==0
+        opposite = (~mask&255)
+        val = val & opposite
+        op.set(val)
+        if rmn!=30: self.finalizerm(rmn)
+    def set_imm(self,instr):
+        rmn = instr&31
+        op = None
+        if rmn==30:
+            op = IOPort(self.main_registers.c)
+        else:
+            op = self.getrm(rmn)
+        val = op.get()
+        bit = (instr>>5)&0b111
+        mask = 1<<bit
+        self.system_registers.zero = (val&mask)==0
+        val = val | mask
+        op.set(val)
+        if rmn!=30: self.finalizerm(rmn)
+    def bit_reg(self,instr):
+        rmn = instr&31
+        op = None
+        if rmn==30:
+            op = IOPort(self.main_registers.c)
+        else:
+            op = self.getrm(rmn)
+        val = op.get()
+        bit = (self.main_registers.b if (instr>>7)&1 else\
+         self.main_registers.a)&0b111
+        mask = 1<<bit
+        self.system_registers.zero = (val&mask)==0
+        if rmn!=30: self.finalizerm(rmn)
+    def res_reg(self,instr):
+        rmn = instr&31
+        op = None
+        if rmn==30:
+            op = IOPort(self.main_registers.c)
+        else:
+            op = self.getrm(rmn)
+        val = op.get()
+        bit = (self.main_registers.b if (instr>>7)&1 else\
+         self.main_registers.a)&0b111
+        mask = 1<<bit
+        self.system_registers.zero = (val&mask)==0
+        opposite = (~mask&255)
+        val = val & opposite
+        op.set(val)
+        if rmn!=30: self.finalizerm(rmn)
+    def set_reg(self,instr):
+        rmn = instr&31
+        op = None
+        if rmn==30:
+            op = IOPort(self.main_registers.c)
+        else:
+            op = self.getrm(rmn)
+        val = op.get()
+        bit = (self.main_registers.b if (instr>>7)&1 else\
+         self.main_registers.a)&0b111
+        mask = 1<<bit
+        self.system_registers.zero = (val&mask)==0
+        val = val | mask
+        op.set(val)
+        if rmn!=30: self.finalizerm(rmn)
     def getrm(self,v,sixteen=False):
         if v==0: # imm
             val = self.memory.read_u16(self.system_registers.pc)
