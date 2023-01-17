@@ -1,11 +1,7 @@
 # pilot-py
 
-A WIP emulator of Pilot, the CPU behind the [HexHeld](https://github.com/hexheld) fantasy console.
+A WIP emulator of Pilot-16, the CPU originally behind the [HexHeld](https://github.com/hexheld) fantasy console.
 
-## Why?
+Archived because Pilot-16 is being replaced and I don't think I'll get around to finishing this anytime soon. Maybe later?
 
-Because I felt like it, and nobody else seems to be forthcoming with anything resembling an emulator yet.
-
-## License
-
-Haven't decided on one yet. I promise it'll be something open-source though, debating either GPL or MIT. (It's not finished, in any case, so I wouldn't go using it if I were you.)
+All of the code here is now officially under MIT license (it's what I would've chosen anyways) but I can't be bothered to copy/paste the license in, so you have my word in this commit that that's my intention.
